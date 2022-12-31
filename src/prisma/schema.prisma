@@ -1,0 +1,139 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                  String                @id @default(uuid())
+  name                String                @unique
+  email               String                @unique
+  image               String?
+  password            String
+  RestaurantOrganizer RestaurantOrganizer[]
+  roleId              String
+  role                UserRole              @relation(fields: [roleId], references: [id])
+  cart                Cart?
+}
+
+model UserRole {
+  id   String @id @default(uuid())
+  name String @unique
+  User User[]
+}
+
+model Restaurant {
+  id                  String                @id @default(uuid())
+  name                String                @unique
+  image               String
+  banner              String
+  description         String
+  RestaurantItem      RestaurantItem[]
+  RestaurantOrganizer RestaurantOrganizer[]
+  types               TypesOnRestaurants[]
+  CartItem            CartItem[]
+}
+
+model RestaurantType {
+  id          String               @id @default(uuid())
+  name        String               @unique
+  restaurants TypesOnRestaurants[]
+}
+
+model TypesOnRestaurants {
+  restaurantId     String
+  restaurant       Restaurant     @relation(fields: [restaurantId], references: [id])
+  restaurantTypeId String
+  restaurantType   RestaurantType @relation(fields: [restaurantTypeId], references: [id])
+  createdAt        DateTime       @default(now())
+
+  @@id([restaurantId, restaurantTypeId])
+}
+
+model RestaurantOrganizer {
+  id             String                  @id @default(uuid())
+  roleId         String
+  role           RestaurantOrganizerRole @relation(fields: [roleId], references: [id])
+  restaurantId   String
+  restaurant     Restaurant              @relation(fields: [restaurantId], references: [id])
+  userId         String
+  user           User                    @relation(fields: [userId], references: [id])
+  RestaurantItem RestaurantItem[]
+}
+
+model RestaurantOrganizerRole {
+  id                  String                @id @default(uuid())
+  name                String                @unique
+  RestaurantOrganizer RestaurantOrganizer[]
+}
+
+model RestaurantItem {
+  id           String              @id @default(uuid())
+  restaurantId String
+  restaurant   Restaurant          @relation(fields: [restaurantId], references: [id])
+  userId       String
+  user         RestaurantOrganizer @relation(fields: [userId], references: [id])
+  name         String
+  image        String
+  description  String?
+  price        Int
+  expired      String
+  stock        Int
+  typeId       String
+  type         RestaurantItemType  @relation(fields: [typeId], references: [id])
+  CartItem     CartItem[]
+}
+
+model RestaurantItemType {
+  id             String           @id @default(uuid())
+  name           String           @unique
+  RestaurantItem RestaurantItem[]
+}
+
+model Cart {
+  id       String     @id @default(uuid())
+  userId   String     @unique
+  user     User       @relation(fields: [userId], references: [id])
+  cartItem CartItem[]
+}
+
+model CartItem {
+  id           String         @id @default(uuid())
+  quantity     Int
+  subPrice     Int
+  cartId       String
+  cart         Cart           @relation(fields: [cartId], references: [id])
+  restaurantId String
+  restaurant   Restaurant     @relation(fields: [restaurantId], references: [id])
+  itemId       String
+  item         RestaurantItem @relation(fields: [itemId], references: [id])
+}
+
+model Receipt {
+  id          String        @id @default(uuid())
+  totalPrice  Int
+  userId      String
+  userName    String
+  ReceiptItem ReceiptItem[]
+}
+
+model ReceiptItem {
+  id             String  @id @default(uuid())
+  quantity       Int
+  subPrice       Int
+  pricePerItem   Int
+  expired        String
+  restaurantId   String
+  restaurantName String
+  itemId         String
+  itemName       String
+  receiptId      String
+  receipt        Receipt @relation(fields: [receiptId], references: [id])
+}
